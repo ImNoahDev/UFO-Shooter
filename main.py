@@ -38,22 +38,58 @@ def draw_text(text, font, color, surface, x, y):
     textrect = textobj.get_rect()
     textrect.center = (x, y)
     surface.blit(textobj, textrect)
+
+
+def game_over_screen(screen, font, score):
+    # Fill the screen with black
+    screen.fill((0, 0, 0))
+
+    # Create a game over message
+    game_over_text = font.render('Game Over', True, (255, 0, 0))
+    score_text = font.render(f'Your Score: {score}', True, (255, 255, 255))
+    restart_text = font.render('Press R to Restart or Q to Quit', True, (255, 255, 255))
+
+    # Position the text
+    game_over_rect = game_over_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+    score_rect = score_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+    restart_rect = restart_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
+
+    # Draw the text on the screen
+    screen.blit(game_over_text, game_over_rect)
+    screen.blit(score_text, score_rect)
+    screen.blit(restart_text, restart_rect)
+
+    # Update the display
+    pygame.display.flip()
+
+    # Wait for user input to restart or quit
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    waiting = False  # Exit the loop to restart the game
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+
+
 def main():
     level = 1
     score = 0
     spaceship = Spaceship(WIDTH // 2, HEIGHT // 2)
     asteroids = create_asteroids(START_ASTEROIDS)
 
-    # Main game loop
     running = True
     while running:
-        # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-        # Key Presses
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             spaceship.rotate(-1)
@@ -68,12 +104,22 @@ def main():
                 spaceship.shoot()
                 shoot_sound.play()
 
-        # Update game objects
         spaceship.update()
+
+        # Update and draw asteroids
         for asteroid in asteroids:
             asteroid.update()
 
-        # Check collisions
+        # Handle bullet collisions with asteroids
+        for bullet in spaceship.bullets[:]:
+            for asteroid in asteroids[:]:
+                if bullet.rect.colliderect(asteroid.rect):
+                    spaceship.bullets.remove(bullet)
+                    asteroids.remove(asteroid)
+                    score += 10
+                    break  # Break out of the asteroid loop after collision
+
+        # Check if the spaceship collides with any asteroids
         if spaceship.check_collision(asteroids):
             if spaceship.lives <= 0:
                 game_over_screen(screen, font, score)
@@ -86,21 +132,24 @@ def main():
             score += 100
             asteroids = create_asteroids(START_ASTEROIDS + (level - 1) * LEVEL_INCREASE)
 
-        # Drawing
         screen.fill(WHITE)
         spaceship.draw(screen)
+        
         for asteroid in asteroids:
             asteroid.draw(screen)
 
-        # Draw UI elements
+        # Draw bullets and remove off-screen bullets
+        spaceship.bullets = [bullet for bullet in spaceship.bullets if bullet.update()]
+        for bullet in spaceship.bullets:
+            bullet.draw(screen)
+
         draw_text(f"Score: {score}", font, BLACK, screen, 100, 20)
         draw_text(f"Lives: {spaceship.lives}", font, BLACK, screen, WIDTH - 100, 20)
         draw_text(f"Level: {level}", font, BLACK, screen, WIDTH // 2, 20)
-        
-        pygame.display.flip()
 
-        # Cap the frame rate
+        pygame.display.flip()
         clock.tick(FPS)
 
 if __name__ == "__main__":
-    main()
+    while True:  # Main game loop
+        main()
