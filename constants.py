@@ -1,0 +1,9 @@
+# constants.py
+
+WIDTH = 800
+HEIGHT = 600
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+FPS = 60
+START_ASTEROIDS = 5
+LEVEL_INCREASE = 2
