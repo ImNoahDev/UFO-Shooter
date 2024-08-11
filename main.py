@@ -28,10 +28,26 @@ explosion_sound = pygame.mixer.Sound('assets/sounds/explosion.wav')
 font = pygame.font.SysFont('Arial', 24)
 
 # main.py
-def create_asteroids(num_asteroids):
-    asteroids = [Asteroid(random.randint(0, WIDTH), random.randint(0, HEIGHT)) for _ in range(num_asteroids)]
-    print(f"Created {len(asteroids)} asteroids")
+import random
+
+def create_asteroids(num_asteroids, spaceship_rect):
+    asteroids = []
+    min_distance = 100  # Minimum distance from the spaceship
+    for _ in range(num_asteroids):
+        while True:
+            x = random.randint(0, WIDTH)
+            y = random.randint(0, HEIGHT)
+            asteroid_rect = pygame.Rect(x, y, 50, 50)  # Assuming 50x50 size for the asteroid
+
+            # Check if the asteroid is far enough from the spaceship
+            if asteroid_rect.colliderect(spaceship_rect.inflate(min_distance, min_distance)):
+                continue  # Retry if too close
+
+            asteroid = Asteroid(x, y)
+            asteroids.append(asteroid)
+            break
     return asteroids
+
 
 def draw_text(text, font, color, surface, x, y):
     textobj = font.render(text, True, color)
@@ -81,7 +97,7 @@ def main():
     level = 1
     score = 0
     spaceship = Spaceship(WIDTH // 2, HEIGHT // 2)
-    asteroids = create_asteroids(START_ASTEROIDS)
+    asteroids = create_asteroids(START_ASTEROIDS, spaceship.rect)
 
     running = True
     while running:
@@ -130,8 +146,7 @@ def main():
         if not asteroids:
             level += 1
             score += 100
-            asteroids = create_asteroids(START_ASTEROIDS + (level - 1) * LEVEL_INCREASE)
-
+            asteroids = create_asteroids(START_ASTEROIDS + (level - 1) * LEVEL_INCREASE, spaceship.rect)
         screen.fill(WHITE)
         spaceship.draw(screen)
         
